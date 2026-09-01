@@ -1,0 +1,43 @@
+import { getTokenMetrics } from "@/lib/agents-db";
+
+const TokenMetrics = async () => {
+  const { totalTokens, estimatedCost, activeStreams } = await getTokenMetrics();
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <h2 className="mb-4 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+        Cluster Token Analytics
+      </h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            Total Tokens
+          </div>
+          <div className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            {totalTokens.toLocaleString()}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            Estimated Cost
+          </div>
+          <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            {estimatedCost}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            Active Streams
+          </div>
+          <div className="mt-1 text-2xl font-bold text-sky-600 dark:text-sky-400">
+            {activeStreams}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TokenMetrics;
