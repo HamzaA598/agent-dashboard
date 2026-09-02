@@ -14,4 +14,5 @@ export const updateAgentStatus = async (
   mockAgents[idx].status = newStatus;
 
   revalidatePath(`/agents/${id}`);
+  revalidatePath(`/agents`);
 };
