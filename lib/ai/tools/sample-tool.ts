@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const sampleTool = tool({
   description: "always call this tool",
-  parameters: z.object({
+  inputSchema: z.object({
     value: z.string().describe("Input argument required for the operation"),
   }),
   execute: async ({
