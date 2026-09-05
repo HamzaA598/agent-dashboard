@@ -1,6 +1,7 @@
 import { getAgentById } from "@/lib/agents-db";
 import Link from "next/link";
 import TriggerTestRunButton from "./components/trigger-test-run-button";
+import ChatInterface from "./components/chat-interface";
 
 interface AgentProps {
   params: Promise<{ agentId: string }>;
@@ -61,6 +62,7 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
             { id: "overview", label: "Overview" },
             { id: "logs", label: "Logs" },
             { id: "config", label: "Config" },
+            { id: "chat", label: "Chat" },
           ].map((item) => {
             const isActive = tab === item.id;
             return (
@@ -135,25 +137,33 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Model</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Model
+                </span>
                 <p className="mt-1 font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {agent.config.model}
                 </p>
               </div>
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Temperature</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Temperature
+                </span>
                 <p className="mt-1 font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {agent.config.temperature}
                 </p>
               </div>
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Max Tokens</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Max Tokens
+                </span>
                 <p className="mt-1 font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {agent.config.maxTokens.toLocaleString()}
                 </p>
               </div>
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Enabled Tools</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Enabled Tools
+                </span>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {agent.config.tools.map((tool) => (
                     <span
@@ -167,6 +177,8 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
               </div>
             </div>
           </div>
+        ) : tab === "chat" ? (
+          <ChatInterface />
         ) : (
           <div className="rounded-lg border border-zinc-200 bg-white p-4 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
             Unknown tab

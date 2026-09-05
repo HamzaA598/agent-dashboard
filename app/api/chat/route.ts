@@ -1,28 +1,32 @@
-import { delay } from "@/utils/delay";
+import { runAgent } from "@/lib/ai/agent";
 
 export const POST = async (req: Request) => {
   const { prompt } = await req.json();
 
+  const result = runAgent({ input: prompt });
+
   const encoder = new TextEncoder();
 
+  // 2. Wrap in ReadableStream matching our frontend SSE contract
   const stream = new ReadableStream({
     async start(controller) {
-      controller.enqueue(encoder.encode(`data: {"text": "hello"}\n\n`));
-      await delay(300);
-      controller.enqueue(encoder.encode(`data: {"text": "how"}\n\n`));
-
-      await delay(300);
-      controller.enqueue(encoder.encode(`data: {"text": "are"}\n\n`));
-
-      await delay(300);
-      controller.enqueue(encoder.encode(`data: {"text": "you?"}\n\n`));
-
-      await delay(300);
-      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      controller.close();
+      try {
+        // Iterate over text tokens as the model generates them
+        for await (const chunk of result.textStream) {
+          const payload = JSON.stringify({ text: chunk });
+          controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+        }
+        // Send our termination token
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      } catch (err) {
+        controller.error(err);
+      } finally {
+        controller.close();
+      }
     },
   });
 
+  // 3. Return standard SSE HTTP response
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
