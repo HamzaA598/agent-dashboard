@@ -1,9 +1,13 @@
 "use client";
 
 import { Message } from "@/types/Message";
+import { useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
 const ChatInterface = () => {
+  const searchParams = useSearchParams();
+  const threadIdSearchParam = searchParams.get("threadId");
+
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -13,8 +17,17 @@ const ChatInterface = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isSubmitting]);
 
+  const updateUrlShallow = (newPathOrQuery: string) => {
+    window.history.replaceState(null, "", newPathOrQuery);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const threadId = threadIdSearchParam ?? crypto.randomUUID();
+    if (!threadIdSearchParam)
+      updateUrlShallow(`?tab=chat&threadId=${threadId}`);
+
     const promptToSend = input.trim();
     if (!promptToSend || isSubmitting) return;
 
@@ -33,7 +46,10 @@ const ChatInterface = () => {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: promptToSend }),
+      body: JSON.stringify({
+        threadId,
+        prompt: promptToSend,
+      }),
     });
 
     if (!response.body) return;

@@ -34,6 +34,10 @@ export const promptTemplates = pgTable("prompt_templates", {
 export const threads = pgTable("threads", {
   id: uuid("id").defaultRandom().primaryKey(),
 
+  // workspaceId: uuid("workspace_id")
+  //   .notNull()
+  //   .references(() => workspaces.id, { onDelete: "cascade" }),
+
   title: text("title").notNull(),
 
   activeAgentId: varchar("active_agent_id", { length: 256 }).notNull(),
