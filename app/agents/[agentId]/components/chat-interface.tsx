@@ -1,6 +1,7 @@
 "use client";
 
 import { Message } from "@/types/Message";
+import { ToolExecution } from "@/types/ToolExecution";
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
@@ -96,12 +97,13 @@ const ChatInterface = () => {
 
               nextMessages[targetIndex] = {
                 ...nextMessages[targetIndex],
-                toolCalls: [
-                  ...(nextMessages[targetIndex].toolCalls ?? []),
+                toolExecutions: [
+                  ...(nextMessages[targetIndex].toolExecutions ?? []),
                   {
-                    id: json["toolCallId"],
+                    id: json["id"],
                     toolName: json["toolName"],
                     input: json["input"],
+                    status: "pending",
                   },
                 ],
               };
@@ -115,14 +117,22 @@ const ChatInterface = () => {
 
               nextMessages[targetIndex] = {
                 ...nextMessages[targetIndex],
-                toolResults: [
-                  ...(nextMessages[targetIndex].toolResults ?? []),
-                  {
-                    id: json["toolCallId"],
-                    toolName: json["toolName"],
-                    input: json["input"],
-                    output: json["output"],
-                  },
+                toolExecutions: [
+                  ...(nextMessages[targetIndex].toolExecutions?.map(
+                    (toolExecution) => {
+                      if (toolExecution.id === json["id"]) {
+                        const newToolExecution: ToolExecution = {
+                          id: json["id"],
+                          toolName: json["toolName"],
+                          input: json["input"],
+                          output: json["output"],
+                          status: "success",
+                        };
+                        return newToolExecution;
+                      }
+                      return toolExecution;
+                    },
+                  ) ?? []),
                 ],
               };
 
@@ -254,16 +264,12 @@ const ChatInterface = () => {
                   }`}
                 >
                   {/* Tool Invocations Section */}
-                  {((message.toolCalls?.length ?? 0) > 0 ||
-                    (message.toolResults?.length ?? 0) > 0) && (
+                  {(message.toolExecutions?.length ?? 0) > 0 && (
                     <div className="mb-2.5 space-y-2 border-b border-zinc-200/60 pb-2.5 dark:border-zinc-700/50">
-                      {message.toolCalls?.map((toolCall) => {
-                        const matchingResult = message.toolResults?.find(
-                          (r) => r.id === toolCall.id,
-                        );
+                      {message.toolExecutions?.map((toolExecution) => {
                         return (
                           <div
-                            key={toolCall.id}
+                            key={toolExecution.id}
                             className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100/70 font-mono text-xs dark:border-zinc-700/70 dark:bg-zinc-800/80"
                           >
                             <div className="flex items-center justify-between border-b border-zinc-200/60 bg-zinc-200/40 px-2.5 py-1.5 dark:border-zinc-700/50 dark:bg-zinc-800">
@@ -287,17 +293,19 @@ const ChatInterface = () => {
                                   />
                                 </svg>
                                 <span className="font-semibold">
-                                  {toolCall.toolName}
+                                  {toolExecution.toolName}
                                 </span>
                               </div>
                               <span
                                 className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                                  matchingResult
+                                  toolExecution.status === "success"
                                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
                                     : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"
                                 }`}
                               >
-                                {matchingResult ? "Executed" : "Calling..."}
+                                {toolExecution.status === "success"
+                                  ? "Executed"
+                                  : "Calling..."}
                               </span>
                             </div>
                             <div className="space-y-1.5 p-2">
@@ -306,17 +314,17 @@ const ChatInterface = () => {
                                   Input
                                 </span>
                                 <pre className="mt-0.5 overflow-x-auto rounded bg-zinc-200/50 p-1.5 text-[11px] text-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-200">
-                                  {JSON.stringify(toolCall.input, null, 2)}
+                                  {JSON.stringify(toolExecution.input, null, 2)}
                                 </pre>
                               </div>
-                              {matchingResult && (
+                              {toolExecution.status === "success" && (
                                 <div>
                                   <span className="text-[10px] uppercase tracking-wider text-zinc-400">
                                     Result
                                   </span>
                                   <pre className="mt-0.5 overflow-x-auto rounded bg-emerald-500/10 p-1.5 text-[11px] text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
                                     {JSON.stringify(
-                                      matchingResult.output,
+                                      toolExecution.output,
                                       null,
                                       2,
                                     )}

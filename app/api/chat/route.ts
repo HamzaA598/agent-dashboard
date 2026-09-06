@@ -1,6 +1,7 @@
 import { runAgent } from "@/lib/ai/agent";
 import { db } from "@/lib/db";
 import { messages, threads } from "@/lib/db/schema";
+import { ToolExecution } from "@/types/ToolExecution";
 import { and, eq } from "drizzle-orm";
 
 export const POST = async (req: Request) => {
@@ -43,6 +44,7 @@ export const POST = async (req: Request) => {
 
   const encoder = new TextEncoder();
 
+  const metadata: { toolExecutions: ToolExecution[] } = { toolExecutions: [] };
   let assistantMessageContent = "";
 
   // 2. Wrap in ReadableStream matching our frontend SSE contract
@@ -52,11 +54,45 @@ export const POST = async (req: Request) => {
         for await (const part of result.stream) {
           console.log(`route.ts part: `, part);
           if (["tool-call", "tool-result", "text-delta"].includes(part.type)) {
-            const payload = JSON.stringify(part);
-            controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+            let payload = {};
 
-            if (part.type === "text-delta")
+            if (part.type === "tool-call") {
+              const toolExecution: ToolExecution = {
+                id: part.toolCallId,
+                toolName: part.toolName,
+                input: part.input,
+                status: "pending",
+              };
+
+              metadata["toolExecutions"].push(toolExecution);
+              payload = { ...toolExecution, type: "tool-call" };
+            }
+
+            if (part.type === "tool-result") {
+              metadata["toolExecutions"] = metadata["toolExecutions"].map(
+                (toolExecution) => {
+                  if (toolExecution.id === part.toolCallId) {
+                    const newToolExecution: ToolExecution = {
+                      ...toolExecution,
+                      output: part.output,
+                      status: "success",
+                    };
+                    payload = { ...newToolExecution, type: "tool-result" };
+                    return newToolExecution;
+                  }
+                  return toolExecution;
+                },
+              );
+            }
+
+            if (part.type === "text-delta") {
               assistantMessageContent += part.text;
+              payload = { text: part.text, type: "text-delta" };
+            }
+
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
+            );
           }
         }
         // Send our termination token
@@ -70,6 +106,7 @@ export const POST = async (req: Request) => {
             threadId: threadId,
             role: "assistant",
             content: assistantMessageContent,
+            metadata,
           })
           .returning();
         controller.close();

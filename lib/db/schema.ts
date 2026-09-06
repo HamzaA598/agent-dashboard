@@ -64,6 +64,8 @@ export const messages = pgTable("messages", {
 
   role: varchar("role", { length: 256 }).notNull(),
 
+  metadata: jsonb("metadata"),
+
   content: text("content").notNull(),
 
   createdAt: timestamp("created_at", { withTimezone: true })
