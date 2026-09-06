@@ -35,6 +35,6 @@ export const calculator = tool({
       },
     ),
   execute: async ({ x, operation, y }: CalculatorParams) => {
-    return { result: evaluateOperation(operation, x, y) };
+    return { output: evaluateOperation(operation, x, y) };
   },
 });

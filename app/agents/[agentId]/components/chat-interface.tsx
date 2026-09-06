@@ -1,10 +1,12 @@
 "use client";
 
 import { Message } from "@/types/Message";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
 const ChatInterface = () => {
+  const { agentId } = useParams();
+
   const searchParams = useSearchParams();
   const threadIdSearchParam = searchParams.get("threadId");
 
@@ -47,6 +49,7 @@ const ChatInterface = () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        agentId,
         threadId,
         prompt: promptToSend,
       }),
@@ -85,7 +88,48 @@ const ChatInterface = () => {
         if (line.startsWith("data: ")) {
           const stripped = line.replace("data: ", "");
           const json = JSON.parse(stripped);
-          assistantMessageContentDiff += json["text"];
+
+          if (json["type"] === "tool-call") {
+            setMessages((prevMessages) => {
+              const nextMessages = [...prevMessages];
+              const targetIndex = nextMessages.length - 1;
+
+              nextMessages[targetIndex] = {
+                ...nextMessages[targetIndex],
+                toolCalls: [
+                  ...(nextMessages[targetIndex].toolCalls ?? []),
+                  {
+                    id: json["toolCallId"],
+                    toolName: json["toolName"],
+                    input: json["input"],
+                  },
+                ],
+              };
+
+              return nextMessages;
+            });
+          } else if (json["type"] === "tool-result") {
+            setMessages((prevMessages) => {
+              const nextMessages = [...prevMessages];
+              const targetIndex = nextMessages.length - 1;
+
+              nextMessages[targetIndex] = {
+                ...nextMessages[targetIndex],
+                toolResults: [
+                  ...(nextMessages[targetIndex].toolResults ?? []),
+                  {
+                    id: json["toolCallId"],
+                    toolName: json["toolName"],
+                    input: json["input"],
+                    output: json["output"],
+                  },
+                ],
+              };
+
+              return nextMessages;
+            });
+          } else if (json["type"] === "text-delta")
+            assistantMessageContentDiff += json["text"];
         }
       }
 
@@ -209,6 +253,83 @@ const ChatInterface = () => {
                       : "rounded-tl-xs border border-zinc-200/80 bg-zinc-50 text-zinc-900 dark:border-zinc-700/60 dark:bg-zinc-800/60 dark:text-zinc-100 max-w-[85%] whitespace-pre-wrap leading-relaxed"
                   }`}
                 >
+                  {/* Tool Invocations Section */}
+                  {((message.toolCalls?.length ?? 0) > 0 ||
+                    (message.toolResults?.length ?? 0) > 0) && (
+                    <div className="mb-2.5 space-y-2 border-b border-zinc-200/60 pb-2.5 dark:border-zinc-700/50">
+                      {message.toolCalls?.map((toolCall) => {
+                        const matchingResult = message.toolResults?.find(
+                          (r) => r.id === toolCall.id,
+                        );
+                        return (
+                          <div
+                            key={toolCall.id}
+                            className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100/70 font-mono text-xs dark:border-zinc-700/70 dark:bg-zinc-800/80"
+                          >
+                            <div className="flex items-center justify-between border-b border-zinc-200/60 bg-zinc-200/40 px-2.5 py-1.5 dark:border-zinc-700/50 dark:bg-zinc-800">
+                              <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                                <svg
+                                  className="h-3.5 w-3.5 text-amber-500"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                </svg>
+                                <span className="font-semibold">
+                                  {toolCall.toolName}
+                                </span>
+                              </div>
+                              <span
+                                className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                                  matchingResult
+                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+                                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"
+                                }`}
+                              >
+                                {matchingResult ? "Executed" : "Calling..."}
+                              </span>
+                            </div>
+                            <div className="space-y-1.5 p-2">
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+                                  Input
+                                </span>
+                                <pre className="mt-0.5 overflow-x-auto rounded bg-zinc-200/50 p-1.5 text-[11px] text-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-200">
+                                  {JSON.stringify(toolCall.input, null, 2)}
+                                </pre>
+                              </div>
+                              {matchingResult && (
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+                                    Result
+                                  </span>
+                                  <pre className="mt-0.5 overflow-x-auto rounded bg-emerald-500/10 p-1.5 text-[11px] text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+                                    {JSON.stringify(
+                                      matchingResult.output,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {isEmptyAssistant ? (
                     <div className="flex items-center gap-1.5 py-1 px-1">
                       <div className="h-2 w-2 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-pulse" />

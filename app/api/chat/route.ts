@@ -4,7 +4,7 @@ import { messages, threads } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 
 export const POST = async (req: Request) => {
-  const { prompt, threadId } = await req.json();
+  const { agentId, threadId, prompt } = await req.json();
 
   // const callerWorkspaceId = session.user.activeWorkspaceId;
 
@@ -24,7 +24,7 @@ export const POST = async (req: Request) => {
       .values({
         id: threadId,
         title: prompt,
-        activeAgentId: "google gemini flash 3.5",
+        activeAgentId: agentId,
         status: "active",
       })
       .returning();
@@ -49,11 +49,15 @@ export const POST = async (req: Request) => {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Iterate over text tokens as the model generates them
-        for await (const chunk of result.textStream) {
-          assistantMessageContent += chunk;
-          const payload = JSON.stringify({ text: chunk });
-          controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+        for await (const part of result.stream) {
+          console.log(`route.ts part: `, part);
+          if (["tool-call", "tool-result", "text-delta"].includes(part.type)) {
+            const payload = JSON.stringify(part);
+            controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+
+            if (part.type === "text-delta")
+              assistantMessageContent += part.text;
+          }
         }
         // Send our termination token
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
