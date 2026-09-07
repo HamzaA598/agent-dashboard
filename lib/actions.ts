@@ -1,6 +1,7 @@
 "use server";
 
 import { mockAgents } from "@/data/mockAgents";
+import { helloWorldTask } from "@/trigger/example";
 import { AgentStatus } from "@/types/AgentStatus";
 import { delay } from "@/utils/delay";
 import { revalidatePath } from "next/cache";
@@ -15,4 +16,8 @@ export const updateAgentStatus = async (
 
   revalidatePath(`/agents/${id}`);
   revalidatePath(`/agents`);
+};
+
+export const triggerTestRun = async (agentId: string) => {
+  helloWorldTask.trigger(agentId);
 };

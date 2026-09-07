@@ -1,6 +1,6 @@
 "use client";
 
-import { updateAgentStatus } from "@/lib/actions";
+import { triggerTestRun, updateAgentStatus } from "@/lib/actions";
 import { useParams } from "next/navigation";
 import { useTransition } from "react";
 
@@ -12,6 +12,7 @@ const TriggerTestRunButton = () => {
   const handleTriggerTestRun = () => {
     startTransition(async () => {
       await updateAgentStatus(String(agentId), "executing");
+      await triggerTestRun(String(agentId));
     });
   };
 
