@@ -1,4 +1,4 @@
-import { runAgent } from "@/lib/ai/agent";
+import { runAgent } from "@/lib/ai/agents/agent";
 import { db } from "@/lib/db";
 import { messages, threads } from "@/lib/db/schema";
 import { ToolExecution } from "@/types/ToolExecution";

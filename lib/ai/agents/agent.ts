@@ -1,12 +1,7 @@
 import { isStepCount, streamText } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { sampleTool } from "@/lib/ai/tools/sample-tool";
-import { calculator } from "./tools/calculator";
-
-const google = createGoogleGenerativeAI({
-  apiKey:
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY,
-});
+import { calculator } from "../tools/calculator";
+import { google } from "../llms/google";
 
 interface AgentParams {
   input: string;
@@ -16,7 +11,7 @@ export const runAgent = ({ input }: AgentParams) => {
   return streamText({
     model: google("gemini-3.6-flash"),
     system:
-      "Generic system instructions defining agent persona and behavioral boundaries.",
+      "You are a helpful conversational AI assistant with tool-calling capabilities. Respond clearly and invoke available tools when calculations or actions are required.",
     prompt: input,
     tools: {
       sampleTool,

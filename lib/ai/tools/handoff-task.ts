@@ -9,7 +9,9 @@ export const handoffTask = tool({
   inputSchema: z.object({
     fromExecutionId: z
       .string()
-      .describe("the execution id that will hand this task off"),
+      .describe(
+        "The execution ID of the agent concluding its phase and handing off this task checkpoint",
+      ),
     checkpointSummary: z
       .string()
       .describe(
