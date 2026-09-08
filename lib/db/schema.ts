@@ -72,3 +72,18 @@ export const messages = pgTable("messages", {
     .defaultNow()
     .notNull(),
 });
+
+export const agentExecutions = pgTable("agent_executions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  agentId: varchar("agent_id", { length: 256 }).notNull(),
+  triggerRunId: varchar("trigger_run_id", { length: 256 }),
+  status: varchar("status", { length: 64 }).notNull(), // 'pending' | 'executing' | 'completed' | 'failed'
+  input: jsonb("input"),
+  output: jsonb("output"),
+  durationMs: integer("duration_ms"),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+});

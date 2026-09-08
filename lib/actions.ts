@@ -1,10 +1,12 @@
 "use server";
 
 import { mockAgents } from "@/data/mockAgents";
-import { helloWorldTask } from "@/trigger/example";
+import { testRunTask } from "@/trigger/test-run";
 import { AgentStatus } from "@/types/AgentStatus";
 import { delay } from "@/utils/delay";
 import { revalidatePath } from "next/cache";
+import { agentExecutions } from "./db/schema";
+import { db } from "./db";
 
 export const updateAgentStatus = async (
   id: string,
@@ -18,6 +20,15 @@ export const updateAgentStatus = async (
   revalidatePath(`/agents`);
 };
 
-export const triggerTestRun = async (agentId: string) => {
-  helloWorldTask.trigger(agentId);
+export const triggerTestRun = async (agentId: string, input: string) => {
+  const [agentExecution] = await db
+    .insert(agentExecutions)
+    .values({
+      agentId,
+      input,
+      status: "executing",
+    })
+    .returning();
+
+  testRunTask.trigger({ agentExecutionId: agentExecution.id });
 };

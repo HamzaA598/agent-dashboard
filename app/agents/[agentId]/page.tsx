@@ -2,6 +2,7 @@ import { getAgentById } from "@/lib/agents-db";
 import Link from "next/link";
 import TriggerTestRunButton from "./components/trigger-test-run-button";
 import ChatInterface from "./components/chat-interface";
+import Logs from "./components/logs";
 
 interface AgentProps {
   params: Promise<{ agentId: string }>;
@@ -99,37 +100,7 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
             </div>
           </div>
         ) : tab === "logs" ? (
-          <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Execution Logs
-            </h2>
-            <div className="space-y-2 font-mono text-xs">
-              {agent.logs.map((log, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 rounded-md bg-zinc-50 p-2.5 dark:bg-zinc-800/60"
-                >
-                  <span className="text-zinc-400 dark:text-zinc-500">
-                    {log.timestamp}
-                  </span>
-                  <span
-                    className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
-                      log.type === "success"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                        : log.type === "warning"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
-                    }`}
-                  >
-                    {log.type}
-                  </span>
-                  <span className="flex-1 text-zinc-700 dark:text-zinc-300">
-                    {log.event}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Logs agentId={agentId} />
         ) : tab === "config" ? (
           <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
