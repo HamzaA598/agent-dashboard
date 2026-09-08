@@ -2,12 +2,6 @@ import { evaluateOperation } from "@/utils/evaluateOperation";
 import { tool } from "ai";
 import { z } from "zod";
 
-interface CalculatorParams {
-  x: number;
-  operation: "+" | "-" | "*" | "/";
-  y: number;
-}
-
 export const calculator = tool({
   description:
     "call this tool when needing to do mathematical operations such as addition, subtraction, multiplication, division",
@@ -34,7 +28,7 @@ export const calculator = tool({
         path: ["y"], // Targets the error directly to `y`
       },
     ),
-  execute: async ({ x, operation, y }: CalculatorParams) => {
+  execute: async ({ x, operation, y }) => {
     return { output: evaluateOperation(operation, x, y) };
   },
 });

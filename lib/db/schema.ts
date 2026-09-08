@@ -10,7 +10,22 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 
-export const statusEnum = pgEnum("status", ["active", "idle", "executing"]);
+export const threadStatusEnum = pgEnum("thread_status", [
+  "active",
+  "idle",
+  "executing",
+]);
+export const agentExecutionStatusEnum = pgEnum("agent_execution_status", [
+  "pending",
+  "executing",
+  "completed",
+  "failed",
+]);
+export const taskHandoffStatusEnum = pgEnum("task_handoff_status", [
+  "pending",
+  "consumed",
+  "failed",
+]);
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -42,7 +57,7 @@ export const threads = pgTable("threads", {
 
   activeAgentId: varchar("active_agent_id", { length: 256 }).notNull(),
 
-  status: statusEnum("status").notNull(),
+  status: threadStatusEnum("status").notNull(),
 
   totalTokens: integer("total_tokens").default(0).notNull(),
 
@@ -75,9 +90,15 @@ export const messages = pgTable("messages", {
 
 export const agentExecutions = pgTable("agent_executions", {
   id: uuid("id").defaultRandom().primaryKey(),
+  parentExecutionId: uuid("parent_execution_id").references(
+    (): any => agentExecutions.id,
+    {
+      onDelete: "cascade",
+    },
+  ),
   agentId: varchar("agent_id", { length: 256 }).notNull(),
   triggerRunId: varchar("trigger_run_id", { length: 256 }),
-  status: varchar("status", { length: 64 }).notNull(), // 'pending' | 'executing' | 'completed' | 'failed'
+  status: agentExecutionStatusEnum("status").default("pending").notNull(),
   input: jsonb("input"),
   output: jsonb("output"),
   durationMs: integer("duration_ms"),
@@ -86,4 +107,25 @@ export const agentExecutions = pgTable("agent_executions", {
     .defaultNow()
     .notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+});
+
+export const taskHandoffs = pgTable("task_handoffs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  fromExecutionId: uuid("from_execution_id")
+    .references(() => agentExecutions.id, { onDelete: "cascade" })
+    .notNull(),
+  toExecutionId: uuid("to_execution_id").references(() => agentExecutions.id, {
+    onDelete: "set null",
+  }),
+
+  completedTasks: jsonb("completed_tasks"),
+  pendingTasks: jsonb("pending_tasks"),
+  checkpointSummary: text("checkpoint_summary"),
+  artifacts: jsonb("artifacts"),
+  status: taskHandoffStatusEnum("status").default("pending").notNull(),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
