@@ -7,9 +7,10 @@ import { delay } from "@/utils/delay";
 import { revalidatePath } from "next/cache";
 import { agentExecutions } from "./db/schema";
 import { db } from "./db";
+import { AgentRole } from "@/types/AgentRole";
 
 export const updateAgentStatus = async (
-  id: string,
+  id: AgentRole,
   newStatus: AgentStatus,
 ): Promise<void> => {
   await delay(200);
@@ -20,7 +21,7 @@ export const updateAgentStatus = async (
   revalidatePath(`/agents`);
 };
 
-export const triggerTestRun = async (agentId: string, input: string) => {
+export const triggerTestRun = async (agentId: AgentRole, input: string) => {
   const [agentExecution] = await db
     .insert(agentExecutions)
     .values({

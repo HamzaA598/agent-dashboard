@@ -1,12 +1,13 @@
 import { db } from "@/lib/db";
 import { agentExecutions } from "@/lib/db/schema";
+import { AgentRole } from "@/types/AgentRole";
 import { and, eq } from "drizzle-orm";
 import { NextRequest } from "next/server";
 
 export const GET = async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
 
-  const agentId = searchParams.get("agentId") ?? "";
+  const agentId = (searchParams.get("agentId") as AgentRole) ?? "";
 
   const logs = await db
     .select()

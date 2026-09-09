@@ -1,3 +1,4 @@
+import { AGENT_ROLES } from "@/types/AgentRole";
 import {
   pgTable,
   uuid,
@@ -5,11 +6,11 @@ import {
   varchar,
   integer,
   timestamp,
-  boolean,
   jsonb,
   pgEnum,
 } from "drizzle-orm/pg-core";
 
+export const agentRoleEnum = pgEnum("agent_role", AGENT_ROLES);
 export const threadStatusEnum = pgEnum("thread_status", [
   "active",
   "idle",
@@ -55,7 +56,7 @@ export const threads = pgTable("threads", {
 
   title: text("title").notNull(),
 
-  activeAgentId: varchar("active_agent_id", { length: 256 }).notNull(),
+  activeAgentId: agentRoleEnum("active_agent_id").notNull(),
 
   status: threadStatusEnum("status").notNull(),
 
@@ -96,7 +97,7 @@ export const agentExecutions = pgTable("agent_executions", {
       onDelete: "cascade",
     },
   ),
-  agentId: varchar("agent_id", { length: 256 }).notNull(),
+  agentId: agentRoleEnum("agent_id").notNull(),
   triggerRunId: varchar("trigger_run_id", { length: 256 }),
   status: agentExecutionStatusEnum("status").default("pending").notNull(),
   input: jsonb("input"),

@@ -1,10 +1,11 @@
 import { AutoRefresher } from "@/app/components/auto-refresher";
 import { db } from "@/lib/db";
 import { agentExecutions } from "@/lib/db/schema";
+import { AgentRole } from "@/types/AgentRole";
 import { desc, eq } from "drizzle-orm";
 
 interface LogsParams {
-  agentId: string;
+  agentId: AgentRole;
 }
 
 const Logs = async ({ agentId }: LogsParams) => {

@@ -3,9 +3,10 @@ import Link from "next/link";
 import TriggerTestRunButton from "./components/trigger-test-run-button";
 import ChatInterface from "./components/chat-interface";
 import Logs from "./components/logs";
+import { AgentRole } from "@/types/AgentRole";
 
 interface AgentProps {
-  params: Promise<{ agentId: string }>;
+  params: Promise<{ agentId: AgentRole }>;
   searchParams: Promise<{ tab?: string }>;
 }
 
