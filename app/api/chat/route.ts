@@ -1,6 +1,7 @@
 import { runAgent } from "@/lib/ai/agents/agent";
+import { runOrchestratorAgent } from "@/lib/ai/agents/orchestrator";
 import { db } from "@/lib/db";
-import { messages, threads } from "@/lib/db/schema";
+import { agentExecutions, messages, threads } from "@/lib/db/schema";
 import { ToolExecution } from "@/types/ToolExecution";
 import { and, eq } from "drizzle-orm";
 
@@ -40,7 +41,17 @@ export const POST = async (req: Request) => {
     })
     .returning();
 
-  const result = runAgent({ input: prompt });
+  const [agentExecution] = await db
+    .insert(agentExecutions)
+    .values({
+      agentId: "orchestrator",
+    })
+    .returning();
+
+  const result = runOrchestratorAgent({
+    agentExecutionId: agentExecution.id,
+    prompt,
+  });
 
   const encoder = new TextEncoder();
 
@@ -52,7 +63,6 @@ export const POST = async (req: Request) => {
     async start(controller) {
       try {
         for await (const part of result.stream) {
-          console.log(`route.ts part: `, part);
           if (["tool-call", "tool-result", "text-delta"].includes(part.type)) {
             let payload = {};
 
@@ -65,7 +75,7 @@ export const POST = async (req: Request) => {
               };
 
               metadata["toolExecutions"].push(toolExecution);
-              payload = { ...toolExecution, type: "tool-call" };
+              payload = { ...toolExecution, type: part.type };
             }
 
             if (part.type === "tool-result") {
@@ -77,7 +87,7 @@ export const POST = async (req: Request) => {
                       output: part.output,
                       status: "success",
                     };
-                    payload = { ...newToolExecution, type: "tool-result" };
+                    payload = { ...newToolExecution, type: part.type };
                     return newToolExecution;
                   }
                   return toolExecution;
@@ -87,7 +97,7 @@ export const POST = async (req: Request) => {
 
             if (part.type === "text-delta") {
               assistantMessageContent += part.text;
-              payload = { text: part.text, type: "text-delta" };
+              payload = { text: part.text, type: part.type };
             }
 
             controller.enqueue(
@@ -109,6 +119,17 @@ export const POST = async (req: Request) => {
             metadata,
           })
           .returning();
+
+        if (agentExecution) {
+          await db
+            .update(agentExecutions)
+            .set({
+              status: "completed",
+              completedAt: new Date(),
+            })
+            .where(eq(agentExecutions.id, agentExecution.id));
+        }
+
         controller.close();
       }
     },

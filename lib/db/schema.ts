@@ -120,10 +120,11 @@ export const taskHandoffs = pgTable("task_handoffs", {
     onDelete: "set null",
   }),
 
-  completedTasks: jsonb("completed_tasks"),
-  pendingTasks: jsonb("pending_tasks"),
-  checkpointSummary: text("checkpoint_summary"),
-  artifacts: jsonb("artifacts"),
+  checkpointSummary: text("checkpoint_summary").notNull(),
+  completedTasks: jsonb("completed_tasks").$type<string[]>().notNull(),
+  pendingTasks: jsonb("pending_tasks").$type<string[]>().notNull(),
+  artifacts: jsonb("artifacts").$type<Record<string, any>>(),
+
   status: taskHandoffStatusEnum("status").default("pending").notNull(),
 
   createdAt: timestamp("created_at", { withTimezone: true })
