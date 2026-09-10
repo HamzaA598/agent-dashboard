@@ -78,6 +78,14 @@ export const createDelegateSubagentTool = (parentExecutionId: string) => {
         handoff: latestPendingHandoff,
       });
 
+      await db
+        .update(agentExecutions)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+        })
+        .where(eq(agentExecutions.id, agentExecution.id));
+
       return {
         success: true,
         executionId: agentExecution.id,
