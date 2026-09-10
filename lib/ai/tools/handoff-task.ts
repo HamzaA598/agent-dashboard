@@ -6,7 +6,7 @@ import { z } from "zod";
 export const createHandoffTaskTool = (agentExecutionId: string) => {
   return tool({
     description:
-      "Persist an in-progress task checkpoint and hand off execution to the next agent. Call this tool when nearing your step limit, providing a dense summary of findings, completed work, and remaining pending tasks. If you completed the task, do not call this tool.",
+      "Persist an incomplete task checkpoint to hand off execution to a successor agent. Call this tool ONLY when you are nearing your execution step limit AND still have unfinished objectives or pending tasks. NEVER call this tool if you have completed the task or answered all questions—if the task is complete, directly provide your final findings in your text response.",
     inputSchema: z.object({
       checkpointSummary: z
         .string()

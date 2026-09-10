@@ -71,18 +71,21 @@ export const createDelegateSubagentTool = (parentExecutionId: string) => {
           .where(eq(taskHandoffs.id, latestPendingHandoff.id));
       }
 
-      await agentDefinition.run({
+      const result = await agentDefinition.run({
         agentExecutionId: agentExecution.id,
         prompt,
         input,
         handoff: latestPendingHandoff,
       });
 
+      const outputText = result?.text ?? null;
+
       await db
         .update(agentExecutions)
         .set({
           status: "completed",
           completedAt: new Date(),
+          output: outputText ? { text: outputText } : null,
         })
         .where(eq(agentExecutions.id, agentExecution.id));
 
@@ -90,9 +93,10 @@ export const createDelegateSubagentTool = (parentExecutionId: string) => {
         success: true,
         executionId: agentExecution.id,
         triggerRunId: agentExecution.triggerRunId,
-        status: agentExecution.status,
+        status: "completed",
+        output: outputText ?? "Sub-agent executed successfully.",
         message:
-          "Sub-agent execution record created and task delegated successfully.",
+          "Sub-agent executed and completed successfully.",
       };
     },
   });
