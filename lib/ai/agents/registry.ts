@@ -7,7 +7,11 @@ export const agentRegistry: Record<AgentRole, AgentDefinition<any>> = {
   orchestrator: {
     name: "orch",
     description: "",
-    run: runOrchestratorAgent,
+    run: (ctx) => runOrchestratorAgent(ctx),
   },
-  researcher: { name: "res", description: "", run: runResearcherAgent },
+  researcher: {
+    name: "res",
+    description: "",
+    run: (ctx) => runResearcherAgent(ctx),
+  },
 };
