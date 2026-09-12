@@ -399,10 +399,14 @@ const ChatInterface = () => {
                   {/* Tool Invocations Section */}
                   {(message.toolExecutions?.length ?? 0) > 0 && (
                     <div className="mb-2.5 space-y-2 border-b border-zinc-200/60 pb-2.5 dark:border-zinc-700/50">
-                      {message.toolExecutions?.map((toolExecution) => {
+                      {message.toolExecutions?.map((toolExecution, toolIndex) => {
+                        const uniqueKey =
+                          toolExecution.id ??
+                          (toolExecution as any).toolCallId ??
+                          `tool-${toolIndex}`;
                         return (
                           <div
-                            key={toolExecution.id}
+                            key={`${uniqueKey}-${toolIndex}`}
                             className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100/70 font-mono text-xs dark:border-zinc-700/70 dark:bg-zinc-800/80"
                           >
                             <div className="flex items-center justify-between border-b border-zinc-200/60 bg-zinc-200/40 px-2.5 py-1.5 dark:border-zinc-700/50 dark:bg-zinc-800">
