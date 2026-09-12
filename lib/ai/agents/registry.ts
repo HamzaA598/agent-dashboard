@@ -3,6 +3,7 @@ import { runOrchestratorAgent } from "./orchestrator";
 import { AgentRole } from "@/types/AgentRole";
 import { runResearcherAgent } from "./researcher";
 import { runCoderAgent } from "./coder";
+import { runCalculatorAgent } from "./calculator";
 
 export const agentRegistry: Record<AgentRole, AgentDefinition<any>> = {
   orchestrator: {
@@ -14,13 +15,19 @@ export const agentRegistry: Record<AgentRole, AgentDefinition<any>> = {
   researcher: {
     name: "Researcher Agent",
     description:
-      "Focused worker sub-agent specialized in deep investigation, fact verification, and calculations. Operates within an iterative tool loop and persists structured task handoff checkpoints when reaching step limits.",
+      "Focused worker sub-agent specialized in deep investigation, information retrieval, and fact verification. Use for qualitative research, data synthesis, and literature analysis. Do NOT use for numerical calculations or source code editing.",
     run: (ctx) => runResearcherAgent(ctx),
   },
   coder: {
     name: "Coder Agent",
     description:
-      "Autonomous software engineering sub-agent operating inside an isolated micro-VM sandbox. Inspects directory structures, reads source code, runs bash terminal commands, modifies files with surgical diffs, executes test suites, and implements bug fixes or features.",
+      "Autonomous software engineering sub-agent operating inside an isolated micro-VM sandbox. Inspects directory structures, reads source code, runs bash terminal commands, modifies files with surgical diffs, executes test suites, and implements bug fixes or features. Do NOT use for standalone arithmetic or mathematical expressions.",
     run: (ctx) => runCoderAgent(ctx),
+  },
+  calculator: {
+    name: "Calculator Agent",
+    description:
+      "Dedicated mathematical computation sub-agent. Use EXCLUSIVELY for arithmetic operations, mathematical expressions, numerical evaluations, and formulas. Computes exact numerical values step-by-step.",
+    run: (ctx) => runCalculatorAgent(ctx),
   },
 };

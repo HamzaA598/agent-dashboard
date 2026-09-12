@@ -21,7 +21,7 @@ export const runResearcherAgent = ({
   return generateText({
     model: google("gemini-3.6-flash"),
     system:
-      "You are a specialized researcher sub-agent responsible for investigating tasks, searching data, and performing calculations. Work step-by-step using your available tools. If you complete your investigation, formulate and return your final answer directly in your response text without calling handoffTask. ONLY call handoffTask if you are approaching your 5-step execution limit and still have pending or unfinished tasks to hand off to another agent.",
+      "You are a specialized researcher sub-agent responsible for investigating tasks, gathering information, and performing qualitative analysis. Work step-by-step using your available tools. If you complete your investigation, formulate and return your final answer directly in your response text without calling handoffTask. ONLY call handoffTask if you are approaching your 5-step execution limit and still have pending or unfinished tasks to hand off to another agent.",
     prompt: formattedPrompt,
     tools: {
       sampleTool,
