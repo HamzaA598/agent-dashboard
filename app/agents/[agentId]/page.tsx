@@ -1,4 +1,4 @@
-import { getAgentById } from "@/lib/agents-db";
+import { agentRegistry } from "@/lib/ai/agents/registry";
 import Link from "next/link";
 import TriggerTestRunButton from "./components/trigger-test-run-button";
 import ChatInterface from "./components/chat-interface";
@@ -10,13 +10,75 @@ interface AgentProps {
   searchParams: Promise<{ tab?: string }>;
 }
 
+const AGENT_METADATA: Record<
+  AgentRole,
+  {
+    architecture: string;
+    capabilities: string[];
+    tools: string[];
+  }
+> = {
+  orchestrator: {
+    architecture: "Root Coordination Engine (Vercel AI SDK Core)",
+    capabilities: [
+      "Objective Decomposition",
+      "Dynamic Sub-Agent Delegation",
+      "Streaming SSE Transport",
+      "PostgreSQL Handoff Correlation",
+    ],
+    tools: ["delegateSubagent"],
+  },
+  researcher: {
+    architecture: "Information Synthesis & Retrieval Engine",
+    capabilities: [
+      "Multi-Source Qualitative Research",
+      "Fact Verification",
+      "Step Budget Conservation",
+      "Structured Checkpoint Continuation",
+    ],
+    tools: ["sampleTool", "handoffTask"],
+  },
+  coder: {
+    architecture: "E2B Firecracker KVM Micro-VM Sandbox",
+    capabilities: [
+      "Isolated Linux Micro-VM",
+      "Surgical Search-and-Replace Diffs",
+      "Terminal Command & Test Execution",
+      "Non-Zero Exit Self-Healing",
+    ],
+    tools: [
+      "readSandboxedFile",
+      "listSandboxedFile",
+      "writeSandboxedFile",
+      "executeSandboxedCommand",
+      "patchSandboxedFile",
+      "handoffTask",
+    ],
+  },
+  calculator: {
+    architecture: "Deterministic Arithmetic Engine",
+    capabilities: [
+      "Arbitrary Precision Calculations",
+      "Division-by-Zero Guards",
+      "Step-by-Step Mathematical Derivation",
+    ],
+    tools: ["calculator", "handoffTask"],
+  },
+};
+
 const Agent = async ({ params, searchParams }: AgentProps) => {
   const { agentId } = await params;
   const { tab = "overview" } = await searchParams;
 
-  const agent = await getAgentById(agentId);
+  const agent = agentRegistry[agentId];
+  if (!agent) return <div className="p-8 text-zinc-500">Agent not found</div>;
 
-  if (agent == null) return <div>agent not found</div>;
+  const meta = AGENT_METADATA[agentId] ?? {
+    architecture: "AI Agent",
+    capabilities: ["Autonomous Execution"],
+    tools: [],
+  };
+
   return (
     <main className="min-h-screen bg-zinc-50 p-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 sm:p-10">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -39,20 +101,12 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                 {agent.name}
               </h1>
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  agent.status === "active"
-                    ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 dark:bg-emerald-950/50 dark:text-emerald-400"
-                    : agent.status === "executing"
-                      ? "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20 dark:bg-blue-950/50 dark:text-blue-400"
-                      : "bg-zinc-100 text-zinc-600 ring-1 ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-400"
-                }`}
-              >
-                {agent.status}
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-600/20 dark:bg-emerald-950/50 dark:text-emerald-400">
+                Active
               </span>
             </div>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {agent.role} &bull; {agent.description}
+              {meta.architecture} &bull; {agent.description}
             </p>
           </div>
           <TriggerTestRunButton />
@@ -90,7 +144,7 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
               Capabilities & Architecture
             </h2>
             <div className="flex flex-wrap gap-2">
-              {agent.capabilities.map((cap) => (
+              {meta.capabilities.map((cap) => (
                 <span
                   key={cap}
                   className="inline-flex items-center rounded-md bg-zinc-100 px-2.5 py-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
@@ -105,7 +159,7 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
         ) : tab === "config" ? (
           <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Model Configuration
+              Model & Harness Configuration
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
@@ -113,23 +167,23 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
                   Model
                 </span>
                 <p className="mt-1 font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {agent.config.model}
+                  gemini-3.6-flash
                 </p>
               </div>
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Temperature
+                  Step Limit (Stop Condition)
                 </span>
                 <p className="mt-1 font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {agent.config.temperature}
+                  isStepCount(5)
                 </p>
               </div>
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Max Tokens
+                  Target Architecture
                 </span>
                 <p className="mt-1 font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {agent.config.maxTokens.toLocaleString()}
+                  {meta.architecture}
                 </p>
               </div>
               <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
@@ -137,7 +191,7 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
                   Enabled Tools
                 </span>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {agent.config.tools.map((tool) => (
+                  {meta.tools.map((tool) => (
                     <span
                       key={tool}
                       className="inline-flex items-center rounded bg-zinc-200 px-2 py-0.5 font-mono text-xs text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200"

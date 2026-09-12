@@ -1,6 +1,6 @@
 "use client";
 
-import { triggerTestRun, updateAgentStatus } from "@/lib/actions";
+import { triggerTestRun } from "@/lib/actions";
 import { AgentRole } from "@/types/AgentRole";
 import { useParams, useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -13,7 +13,6 @@ const TriggerTestRunButton = () => {
 
   const handleTriggerTestRun = () => {
     startTransition(async () => {
-      await updateAgentStatus(agentId as AgentRole, "executing");
       await triggerTestRun(agentId as AgentRole, "run tests");
       router.refresh();
     });

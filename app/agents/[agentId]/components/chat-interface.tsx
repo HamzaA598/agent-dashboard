@@ -3,7 +3,9 @@
 import { Message } from "@/types/Message";
 import { ToolExecution } from "@/types/ToolExecution";
 import { useParams, useSearchParams } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { getThreadMessages, getThreadsByAgent } from "@/lib/actions";
+import { AgentRole } from "@/types/AgentRole";
 
 const ChatInterface = () => {
   const { agentId } = useParams();
@@ -13,15 +15,68 @@ const ChatInterface = () => {
 
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [threadsList, setThreadsList] = useState<
+    Array<{ id: string; title: string; createdAt: Date }>
+  >([]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isSubmitting]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const updateUrlShallow = (newPathOrQuery: string) => {
     window.history.replaceState(null, "", newPathOrQuery);
+  };
+
+  const loadThreads = useCallback(async () => {
+    try {
+      const data = await getThreadsByAgent(agentId as AgentRole);
+      setThreadsList(data);
+    } catch (err) {
+      console.error("Failed to load threads", err);
+    }
+  }, [agentId]);
+
+  useEffect(() => {
+    loadThreads();
+  }, [loadThreads]);
+
+  useEffect(() => {
+    if (!threadIdSearchParam) {
+      setMessages([]);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingHistory(true);
+
+    getThreadMessages(threadIdSearchParam)
+      .then((history) => {
+        if (isMounted) {
+          setMessages(history);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load conversation history", err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingHistory(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [threadIdSearchParam]);
+
+  const handleSelectThread = (id: string) => {
+    if (id === threadIdSearchParam) return;
+    updateUrlShallow(`?tab=chat&threadId=${id}`);
+  };
+
+  const handleNewConversation = () => {
+    updateUrlShallow("?tab=chat");
+    setMessages([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,46 +216,124 @@ const ChatInterface = () => {
     }
 
     setIsSubmitting(false);
+    await loadThreads();
   };
 
   return (
-    <div className="flex h-[620px] w-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      {/* Header / Session Bar */}
-      <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-        <div className="flex items-center gap-2.5">
-          <span className="relative flex h-2.5 w-2.5">
-            <span
-              className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                isSubmitting ? "animate-ping bg-blue-400" : "bg-emerald-400"
-              }`}
-            />
-            <span
-              className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-                isSubmitting ? "bg-blue-500" : "bg-emerald-500"
-              }`}
-            />
+    <div className="flex h-[680px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      {/* Left Sidebar: Conversations / Threads List */}
+      <div className="flex w-64 flex-shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <div className="flex items-center justify-between border-b border-zinc-200 p-3 dark:border-zinc-800">
+          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+            Threads ({threadsList.length})
           </span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
-            {isSubmitting
-              ? "Generating Response..."
-              : "Streaming Agent Connected"}
-          </span>
-        </div>
-        {messages.length > 0 && (
           <button
             type="button"
-            onClick={() => setMessages([])}
-            className="text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
+            onClick={handleNewConversation}
+            className="flex items-center gap-1 rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
-            Clear conversation
+            <span>+ New</span>
           </button>
-        )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {threadsList.length === 0 ? (
+            <div className="p-4 text-center text-xs text-zinc-400">
+              No threads yet
+            </div>
+          ) : (
+            threadsList.map((t) => {
+              const isSelected = t.id === threadIdSearchParam;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => handleSelectThread(t.id)}
+                  className={`w-full rounded-lg px-2.5 py-2 text-left transition ${
+                    isSelected
+                      ? "bg-zinc-200/80 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium"
+                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800/50"
+                  }`}
+                >
+                  <div className="truncate text-xs">{t.title}</div>
+                  <div className="mt-0.5 text-[10px] text-zinc-400">
+                    {new Date(t.createdAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center p-6">
+      {/* Right Column: Chat Pane */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Header / Session Bar */}
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2.5 w-2.5">
+              <span
+                className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  isSubmitting ? "animate-ping bg-blue-400" : "bg-emerald-400"
+                }`}
+              />
+              <span
+                className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
+                  isSubmitting ? "bg-blue-500" : "bg-emerald-500"
+                }`}
+              />
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
+              {isSubmitting
+                ? "Generating Response..."
+                : threadIdSearchParam
+                  ? "Conversation Active"
+                  : "New Conversation"}
+            </span>
+          </div>
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={handleNewConversation}
+              className="text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
+            >
+              Start new chat
+            </button>
+          )}
+        </div>
+
+        {/* Messages Scroll Area */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+          {isLoadingHistory ? (
+            <div className="flex h-full flex-col items-center justify-center text-center text-xs text-zinc-400">
+              <svg
+                className="h-6 w-6 animate-spin text-zinc-500 mb-2"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              Loading conversation history...
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center text-center p-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
               <svg
                 className="h-6 w-6"
@@ -416,6 +549,7 @@ const ChatInterface = () => {
           )}
         </button>
       </form>
+      </div>
     </div>
   );
 };
