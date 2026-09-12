@@ -1,12 +1,17 @@
 import { db } from "@/lib/db";
 import { agentExecutions, taskHandoffs } from "@/lib/db/schema";
-import { AGENT_ROLES } from "@/types/AgentRole";
-import { tool } from "ai";
+import { Tool, tool } from "ai";
 import { z } from "zod";
 import { agentRegistry } from "../agents/registry";
 import { and, desc, eq } from "drizzle-orm";
+import Sandbox from "@e2b/code-interpreter";
+import { createSandboxTools } from "./sandbox-tools";
+import { AGENT_ROLES } from "@/constants/agent-roles";
 
-export const createDelegateSubagentTool = (parentExecutionId: string) => {
+export const createDelegateSubagentTool = (
+  parentExecutionId: string,
+  getOrCreateSandbox: () => Promise<Sandbox>,
+) => {
   return tool({
     description:
       "Spawn and delegate a sub-task to a specialized child sub-agent. Call this tool when a task requires specialized execution (such as in-depth research or calculations), registering hierarchical lineage under the parent execution.",
@@ -71,11 +76,19 @@ export const createDelegateSubagentTool = (parentExecutionId: string) => {
           .where(eq(taskHandoffs.id, latestPendingHandoff.id));
       }
 
+      let sandbox: Sandbox | undefined = undefined;
+      let tools: Record<string, Tool> = {};
+      if (agentId === "coder") {
+        sandbox = await getOrCreateSandbox();
+        tools = createSandboxTools(sandbox);
+      }
+
       const result = await agentDefinition.run({
         agentExecutionId: agentExecution.id,
         prompt,
         input,
         handoff: latestPendingHandoff,
+        tools,
       });
 
       const outputText = result?.text ?? null;
@@ -95,8 +108,7 @@ export const createDelegateSubagentTool = (parentExecutionId: string) => {
         triggerRunId: agentExecution.triggerRunId,
         status: "completed",
         output: outputText ?? "Sub-agent executed successfully.",
-        message:
-          "Sub-agent executed and completed successfully.",
+        message: "Sub-agent executed and completed successfully.",
       };
     },
   });

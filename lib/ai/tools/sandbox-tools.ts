@@ -4,8 +4,9 @@ import { createListSandboxedFileTool } from "./list-sandboxed-files";
 import { createWriteSandboxedFileTool } from "./write-sandboxed-file";
 import { createExecuteSandboxedCommandTool } from "./execute-sandboxed-command";
 import { createPatchSandboxedFileTool } from "./patch-sandboxed-file";
+import { Tool } from "ai";
 
-export const createSandboxTools = (sandbox: Sandbox) => ({
+export const createSandboxTools = (sandbox: Sandbox): Record<string, Tool> => ({
   readSandboxedFile: createReadSandboxedFileTool(sandbox),
   listSandboxedFile: createListSandboxedFileTool(sandbox),
   writeSandboxedFile: createWriteSandboxedFileTool(sandbox),

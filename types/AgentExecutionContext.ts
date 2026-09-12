@@ -1,3 +1,4 @@
+import { Tool } from "ai";
 import { TaskHandoffContext } from "./TaskHandoff";
 
 export interface AgentExecutionContext {
@@ -5,4 +6,5 @@ export interface AgentExecutionContext {
   prompt: string;
   input?: Record<string, any>;
   handoff?: TaskHandoffContext;
+  tools?: Record<string, Tool>;
 }

@@ -1,4 +1,4 @@
-import { AGENT_ROLES } from "@/types/AgentRole";
+import { AGENT_ROLES } from "@/constants/agent-roles";
 import {
   pgTable,
   uuid,

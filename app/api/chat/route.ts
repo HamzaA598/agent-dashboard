@@ -48,7 +48,7 @@ export const POST = async (req: Request) => {
     })
     .returning();
 
-  const result = runOrchestratorAgent({
+  const result = await runOrchestratorAgent({
     agentExecutionId: agentExecution.id,
     prompt,
   });
