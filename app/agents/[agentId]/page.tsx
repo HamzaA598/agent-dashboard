@@ -1,7 +1,6 @@
 import { agentRegistry } from "@/lib/ai/agents/registry";
 import Link from "next/link";
 import TriggerTestRunButton from "./components/trigger-test-run-button";
-import ChatInterface from "./components/chat-interface";
 import Logs from "./components/logs";
 import { AgentRole } from "@/types/AgentRole";
 
@@ -118,7 +117,6 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
             { id: "overview", label: "Overview" },
             { id: "logs", label: "Logs" },
             { id: "config", label: "Config" },
-            { id: "chat", label: "Chat" },
           ].map((item) => {
             const isActive = tab === item.id;
             return (
@@ -203,8 +201,6 @@ const Agent = async ({ params, searchParams }: AgentProps) => {
               </div>
             </div>
           </div>
-        ) : tab === "chat" ? (
-          <ChatInterface />
         ) : (
           <div className="rounded-lg border border-zinc-200 bg-white p-4 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
             Unknown tab

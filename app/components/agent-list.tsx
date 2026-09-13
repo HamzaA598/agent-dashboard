@@ -29,7 +29,7 @@ const AgentList = async () => {
           const runs = countsMap[role] ?? 0;
 
           return (
-            <Link key={role} href={`/agents/${role}?tab=chat`}>
+            <Link key={role} href={`/agents/${role}`}>
               <div className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800/80 dark:bg-zinc-800/40 dark:hover:border-zinc-700">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">

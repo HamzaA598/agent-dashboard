@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +25,42 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+        <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/80">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+            <div className="flex items-center gap-6">
+              <Link
+                href="/"
+                className="flex items-center gap-2 text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-100"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-900 font-mono text-[11px] text-white dark:bg-zinc-100 dark:text-zinc-900">
+                  AI
+                </span>
+                Agent Fleet
+              </Link>
+              <nav className="flex items-center gap-1 text-xs">
+                <Link
+                  href="/"
+                  className="rounded-md px-3 py-1.5 font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/chat"
+                  className="rounded-md px-3 py-1.5 font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                >
+                  Global Chat
+                </Link>
+              </nav>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                Fleet Active
+              </span>
+            </div>
+          </div>
+        </header>
         <Providers>{children}</Providers>
       </body>
     </html>
