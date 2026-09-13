@@ -377,7 +377,8 @@ const ChatInterface = () => {
           messages.map((message, index) => {
             const isUser = message.role === "user";
             const isLast = index === messages.length - 1;
-            const isEmptyAssistant = !isUser && message.content === "";
+            const isEmptyAssistant =
+              !isUser && message.content === "" && isSubmitting && isLast;
 
             return (
               <div
