@@ -20,6 +20,7 @@ export default function ChatInterface() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const newlyCreatedThreadIdRef = useRef<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const updateUrlShallow = (newPathOrQuery: string) => {
     window.history.replaceState(null, "", newPathOrQuery);
@@ -214,8 +215,7 @@ export default function ChatInterface() {
             nextMessages[targetIndex] = {
               ...nextMessages[targetIndex],
               content:
-                nextMessages[targetIndex].content +
-                assistantMessageContentDiff,
+                nextMessages[targetIndex].content + assistantMessageContentDiff,
             };
 
             return nextMessages;
@@ -237,9 +237,39 @@ export default function ChatInterface() {
     sendPrompt(input);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter") {
+      if (e.shiftKey) {
+        // Shift + Enter: allow default newline
+        return;
+      }
+      // Enter or Ctrl+Enter / Cmd+Enter: submit
+      e.preventDefault();
+      if (!isSubmitting && input.trim()) {
+        sendPrompt(input);
+      }
+    }
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Temporarily collapse to auto to measure true scrollHeight on shrink/delete
+      textarea.style.height = "auto";
+      const maxHeight = 160; // Max expansion threshold (~6-7 lines)
+      if (textarea.scrollHeight > maxHeight) {
+        textarea.style.height = `${maxHeight}px`;
+        textarea.style.overflowY = "auto";
+      } else {
+        textarea.style.height = `${Math.max(textarea.scrollHeight, 44)}px`;
+        textarea.style.overflowY = "hidden";
+      }
+    }
+  }, [input]);
 
   return (
     <div className="flex h-[720px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -373,7 +403,8 @@ export default function ChatInterface() {
               </h3>
               <p className="mt-1 max-w-sm text-xs text-zinc-500 dark:text-zinc-400">
                 Ask a question or request a coding/math task. The orchestrator
-                autonomously delegates to Coder, Calculator, or Researcher sub-agents.
+                autonomously delegates to Coder, Calculator, or Researcher
+                sub-agents.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {[
@@ -419,78 +450,89 @@ export default function ChatInterface() {
                     {/* Tool Invocations Section */}
                     {(message.toolExecutions?.length ?? 0) > 0 && (
                       <div className="mb-2.5 space-y-2 border-b border-zinc-200/60 pb-2.5 dark:border-zinc-700/50">
-                        {message.toolExecutions?.map((toolExecution, toolIndex) => {
-                          const uniqueKey =
-                            toolExecution.id ??
-                            (toolExecution as any).toolCallId ??
-                            `tool-${toolExecution.toolName}-${toolIndex}`;
+                        {message.toolExecutions?.map(
+                          (toolExecution, toolIndex) => {
+                            const uniqueKey =
+                              toolExecution.id ??
+                              (toolExecution as any).toolCallId ??
+                              `tool-${toolExecution.toolName}-${toolIndex}`;
 
-                          return (
-                            <div
-                              key={uniqueKey}
-                              className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100/70 font-mono text-xs dark:border-zinc-700/70 dark:bg-zinc-800/80"
-                            >
-                              <div className="flex items-center justify-between border-b border-zinc-200/60 bg-zinc-200/40 px-2.5 py-1.5 dark:border-zinc-700/50 dark:bg-zinc-800">
-                                <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
-                                  <svg
-                                    className="h-3.5 w-3.5 text-amber-500"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
+                            return (
+                              <div
+                                key={uniqueKey}
+                                className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100/70 font-mono text-xs dark:border-zinc-700/70 dark:bg-zinc-800/80"
+                              >
+                                <div className="flex items-center justify-between border-b border-zinc-200/60 bg-zinc-200/40 px-2.5 py-1.5 dark:border-zinc-700/50 dark:bg-zinc-800">
+                                  <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                                    <svg
+                                      className="h-3.5 w-3.5 text-amber-500"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                      />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                    </svg>
+                                    <span className="font-semibold">
+                                      {toolExecution.toolName}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                                      toolExecution.status === "success"
+                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+                                        : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"
+                                    }`}
                                   >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                                    />
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                  </svg>
-                                  <span className="font-semibold">
-                                    {toolExecution.toolName}
+                                    {toolExecution.status === "success"
+                                      ? "Executed"
+                                      : "Calling..."}
                                   </span>
                                 </div>
-                                <span
-                                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                                    toolExecution.status === "success"
-                                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
-                                      : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"
-                                  }`}
-                                >
-                                  {toolExecution.status === "success"
-                                    ? "Executed"
-                                    : "Calling..."}
-                                </span>
-                              </div>
-                              <div className="space-y-1.5 p-2">
-                                <div>
-                                  <span className="text-[10px] uppercase tracking-wider text-zinc-400">
-                                    Input
-                                  </span>
-                                  <pre className="mt-0.5 overflow-x-auto rounded bg-zinc-200/50 p-1.5 text-[11px] text-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-200">
-                                    {JSON.stringify(toolExecution.input, null, 2)}
-                                  </pre>
-                                </div>
-                                {toolExecution.status === "success" && (
+                                <div className="space-y-1.5 p-2">
                                   <div>
                                     <span className="text-[10px] uppercase tracking-wider text-zinc-400">
-                                      Result
+                                      Input
                                     </span>
-                                    <pre className="mt-0.5 max-h-48 overflow-y-auto rounded bg-emerald-50/50 p-1.5 text-[11px] text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-                                      {typeof toolExecution.output === "string"
-                                        ? toolExecution.output
-                                        : JSON.stringify(toolExecution.output, null, 2)}
+                                    <pre className="mt-0.5 overflow-x-auto rounded bg-zinc-200/50 p-1.5 text-[11px] text-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-200">
+                                      {JSON.stringify(
+                                        toolExecution.input,
+                                        null,
+                                        2,
+                                      )}
                                     </pre>
                                   </div>
-                                )}
+                                  {toolExecution.status === "success" && (
+                                    <div>
+                                      <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+                                        Result
+                                      </span>
+                                      <pre className="mt-0.5 max-h-48 overflow-y-auto rounded bg-emerald-50/50 p-1.5 text-[11px] text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+                                        {typeof toolExecution.output ===
+                                        "string"
+                                          ? toolExecution.output
+                                          : JSON.stringify(
+                                              toolExecution.output,
+                                              null,
+                                              2,
+                                            )}
+                                      </pre>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          },
+                        )}
                       </div>
                     )}
 
@@ -514,15 +556,17 @@ export default function ChatInterface() {
         {/* Input Form */}
         <form
           onSubmit={handleSubmit}
-          className="flex items-center gap-2 border-t border-zinc-200 bg-zinc-50/50 p-3 sm:p-4 rounded-b-xl dark:border-zinc-800 dark:bg-zinc-900/60"
+          className="flex items-end gap-2 border-t border-zinc-200 bg-zinc-50/50 p-3 sm:p-4 rounded-b-xl dark:border-zinc-800 dark:bg-zinc-900/60"
         >
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask orchestrator or delegate tasks to coder/calculator..."
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder="Ask orchestrator or delegate tasks to coder/calculator... (Shift+Enter for newline, Enter to send)"
             disabled={isSubmitting}
-            className="flex-1 rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-zinc-100 dark:focus:ring-zinc-100 disabled:opacity-50 transition"
+            className="flex-1 resize-none rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-zinc-100 dark:focus:ring-zinc-100 disabled:opacity-50 min-h-[44px]"
           />
           <button
             type="submit"
