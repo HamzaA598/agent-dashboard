@@ -100,11 +100,12 @@ export const agentExecutions = pgTable("agent_executions", {
   ),
   agentId: agentRoleEnum("agent_id").notNull(),
   triggerRunId: varchar("trigger_run_id", { length: 256 }),
-  status: agentExecutionStatusEnum("status").default("pending").notNull(),
+  prompt: text("prompt").notNull(),
   input: jsonb("input"),
+  status: agentExecutionStatusEnum("status").default("pending").notNull(),
   output: jsonb("output"),
-  durationMs: integer("duration_ms"),
   error: text("error"),
+  durationMs: integer("duration_ms"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

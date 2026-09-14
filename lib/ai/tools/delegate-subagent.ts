@@ -41,6 +41,7 @@ export const createDelegateSubagentTool = (
         .values({
           parentExecutionId,
           agentId,
+          prompt,
           input,
         })
         .returning();

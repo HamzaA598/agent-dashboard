@@ -42,7 +42,7 @@ export const POST = async (req: Request) => {
     .insert(agentExecutions)
     .values({
       agentId: "orchestrator",
-      input: prompt,
+      prompt,
     })
     .returning();
 

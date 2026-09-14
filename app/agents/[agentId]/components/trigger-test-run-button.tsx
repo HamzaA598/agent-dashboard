@@ -13,7 +13,11 @@ const TriggerTestRunButton = () => {
 
   const handleTriggerTestRun = () => {
     startTransition(async () => {
-      await triggerTestRun(agentId as AgentRole, "run tests");
+      await triggerTestRun(
+        agentId as AgentRole,
+        "trigger test run",
+        "run tests",
+      );
       router.refresh();
     });
   };

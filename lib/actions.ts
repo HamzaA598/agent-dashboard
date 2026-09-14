@@ -7,7 +7,9 @@ import { count, eq, asc, desc } from "drizzle-orm";
 import { Message } from "@/types/Message";
 import { testRunTask } from "@/trigger/test-run";
 
-export const getThreadMessages = async (threadId: string): Promise<Message[]> => {
+export const getThreadMessages = async (
+  threadId: string,
+): Promise<Message[]> => {
   const dbMessages = await db
     .select({
       id: messages.id,
@@ -45,12 +47,15 @@ export const getThreadsByAgent = async (agentId?: AgentRole) => {
 };
 
 export const getClusterMetrics = async () => {
-  const [[{ count: executionsCount }], [{ count: threadsCount }], [{ count: messagesCount }]] =
-    await Promise.all([
-      db.select({ count: count() }).from(agentExecutions),
-      db.select({ count: count() }).from(threads),
-      db.select({ count: count() }).from(messages),
-    ]);
+  const [
+    [{ count: executionsCount }],
+    [{ count: threadsCount }],
+    [{ count: messagesCount }],
+  ] = await Promise.all([
+    db.select({ count: count() }).from(agentExecutions),
+    db.select({ count: count() }).from(threads),
+    db.select({ count: count() }).from(messages),
+  ]);
 
   return {
     totalExecutions: Number(executionsCount),
@@ -59,11 +64,16 @@ export const getClusterMetrics = async () => {
   };
 };
 
-export const triggerTestRun = async (agentId: AgentRole, input: string) => {
+export const triggerTestRun = async (
+  agentId: AgentRole,
+  prompt: string,
+  input: string,
+) => {
   const [agentExecution] = await db
     .insert(agentExecutions)
     .values({
       agentId,
+      prompt,
       input,
       status: "executing",
     })
