@@ -12,7 +12,9 @@ export default function ChatPage() {
             Global Agent Orchestrator Chat
           </h1>
           <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-            Direct gateway to the root orchestrator. Sub-agents (Coder, Calculator, Researcher) are dynamically coordinated via tool delegation.
+            Direct gateway to the root orchestrator. Sub-agents (Coder,
+            Calculator, Researcher) are dynamically coordinated via tool
+            delegation.
           </p>
         </div>
 
