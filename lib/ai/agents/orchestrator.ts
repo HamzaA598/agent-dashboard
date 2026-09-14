@@ -7,7 +7,6 @@ export const runOrchestratorAgent = async ({
   threadId,
   agentExecutionId,
   prompt,
-  input,
 }: AgentExecutionContext) => {
   return streamText({
     model: google("gemini-3.6-flash"),
