@@ -1,16 +1,17 @@
 import { db } from "@/lib/db";
 import { agentExecutions, taskHandoffs } from "@/lib/db/schema";
-import { Tool, tool } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
 import { agentRegistry } from "../agents/registry";
 import { and, desc, eq } from "drizzle-orm";
-import Sandbox from "@e2b/code-interpreter";
-import { createSandboxTools } from "./sandbox-tools";
 import { AGENT_ROLES } from "@/constants/agent-roles";
+import { AgentExecutionContext } from "@/types/AgentExecutionContext";
+import { runAgentTask } from "@/trigger/run-agent";
+import { executeAgent } from "@/lib/ai/agents/execute-agent";
 
 export const createDelegateSubagentTool = (
+  threadId: string,
   parentExecutionId: string,
-  getOrCreateSandbox: () => Promise<Sandbox>,
 ) => {
   return tool({
     description:
@@ -76,40 +77,31 @@ export const createDelegateSubagentTool = (
           .where(eq(taskHandoffs.id, latestPendingHandoff.id));
       }
 
-      let sandbox: Sandbox | undefined = undefined;
-      let tools: Record<string, Tool> = {};
-      if (agentId === "coder") {
-        sandbox = await getOrCreateSandbox();
-        tools = createSandboxTools(sandbox);
-      }
-
-      const result = await agentDefinition.run({
+      const agentExecutionContext: AgentExecutionContext = {
+        threadId,
         agentExecutionId: agentExecution.id,
         prompt,
         input,
         handoff: latestPendingHandoff,
-        tools,
-      });
-
-      const outputText = result?.text ?? null;
-
-      await db
-        .update(agentExecutions)
-        .set({
-          status: "completed",
-          completedAt: new Date(),
-          output: outputText ? { text: outputText } : null,
-        })
-        .where(eq(agentExecutions.id, agentExecution.id));
-
-      return {
-        success: true,
-        executionId: agentExecution.id,
-        triggerRunId: agentExecution.triggerRunId,
-        status: "completed",
-        output: outputText ?? "Sub-agent executed successfully.",
-        message: "Sub-agent executed and completed successfully.",
       };
+
+      if (agentDefinition.isLongRunning) {
+        const { id: triggerRunId } = await runAgentTask.trigger({
+          agentId,
+          agentExecutionContext,
+        });
+
+        return {
+          success: true,
+          executionId: agentExecution.id,
+          triggerRunId,
+          status: "pending",
+          output: "Sub-agent run has been successfully dispatched to a task.",
+          message: "Sub-agent has been dispatched to a task.",
+        };
+      }
+
+      return executeAgent(agentId, agentExecutionContext);
     },
   });
 };

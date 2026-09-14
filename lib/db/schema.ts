@@ -57,6 +57,7 @@ export const threads = pgTable("threads", {
   title: text("title").notNull(),
 
   activeAgentId: agentRoleEnum("active_agent_id").notNull(),
+  activeSandboxId: varchar("active_sandbox_id", { length: 256 }),
 
   status: threadStatusEnum("status").notNull(),
 

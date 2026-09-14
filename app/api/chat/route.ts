@@ -21,15 +21,12 @@ export const POST = async (req: Request) => {
     );
 
   if (!thread) {
-    const [thread] = await db
-      .insert(threads)
-      .values({
-        id: threadId,
-        title: prompt,
-        activeAgentId: agentId,
-        status: "active",
-      })
-      .returning();
+    await db.insert(threads).values({
+      id: threadId,
+      title: prompt,
+      activeAgentId: agentId,
+      status: "active",
+    });
   }
 
   const [userMessage] = await db
@@ -49,6 +46,7 @@ export const POST = async (req: Request) => {
     .returning();
 
   const result = await runOrchestratorAgent({
+    threadId,
     agentExecutionId: agentExecution.id,
     prompt,
   });

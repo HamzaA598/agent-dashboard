@@ -23,6 +23,8 @@ export const agentRegistry: Record<AgentRole, AgentDefinition<any>> = {
     description:
       "Autonomous software engineering sub-agent operating inside an isolated micro-VM sandbox. Inspects directory structures, reads source code, runs bash terminal commands, modifies files with surgical diffs, executes test suites, and implements bug fixes or features. Do NOT use for standalone arithmetic or mathematical expressions.",
     run: (ctx) => runCoderAgent(ctx),
+    isLongRunning: true,
+    requiresSandbox: true,
   },
   calculator: {
     name: "Calculator Agent",
