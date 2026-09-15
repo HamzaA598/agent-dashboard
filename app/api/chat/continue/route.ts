@@ -1,4 +1,4 @@
-import { runOrchestratorAgent } from "@/lib/ai/agents/orchestrator";
+import { runOrchestratorSynthesis } from "@/lib/ai/agents/orchestrator";
 import { db } from "@/lib/db";
 import { agentExecutions, messages } from "@/lib/db/schema";
 import { NextResponse } from "next/server";
@@ -23,13 +23,11 @@ export async function POST(request: Request) {
     })
     .returning();
 
-  const result = await runOrchestratorAgent({
-    threadId,
-    agentExecutionId: executionId,
+  const result = await runOrchestratorSynthesis({
     prompt,
   });
 
-  const fullText = await result.text;
+  const fullText = result.text;
 
   await db.update(agentExecutions).set({
     status: "completed",

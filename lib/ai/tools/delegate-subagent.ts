@@ -46,15 +46,19 @@ export const createDelegateSubagentTool = (
         .orderBy(desc(agentExecutions.createdAt))
         .limit(1);
 
-      if (concurrentAgentExecution != null)
+      if (concurrentAgentExecution != null) {
+        const activeRole = concurrentAgentExecution.agentId;
+        const activeStatus = concurrentAgentExecution.status;
+
         return {
           success: false,
           executionId: concurrentAgentExecution.id,
           triggerRunId: concurrentAgentExecution.triggerRunId,
-          status: concurrentAgentExecution.status,
-          output: "Another sub-agent is already running",
-          message: "Another sub-agent is already running",
+          status: activeStatus,
+          output: `[CONCURRENCY_LOCK_ACTIVE]: Delegation rejected. A sub-agent ('${activeRole}', execution ID: ${concurrentAgentExecution.id}) is already actively running with status '${activeStatus}' inside this thread's sandbox. Each thread is strictly restricted to one active sub-agent at a time to prevent sandbox file corruption, command collision, and terminal race conditions. DO NOT retry delegation on this turn. Formulate your response informing the user that the '${activeRole}' task is currently in progress and its output will be delivered once completed.`,
+          message: `Delegation rejected: '${activeRole}' is already executing in this thread's sandbox (status: ${activeStatus}).`,
         };
+      }
 
       const agentDefinition = agentRegistry[agentId];
 

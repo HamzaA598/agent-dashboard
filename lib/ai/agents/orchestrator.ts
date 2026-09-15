@@ -34,20 +34,15 @@ When a task requires execution, coding, calculation, or research, invoke delegat
   });
 };
 
-export const runOrchestratorAgentFinalize = async ({
+export const runOrchestratorSynthesis = async ({
   prompt,
 }: {
   prompt: string;
 }) => {
   return generateText({
     model: groq("qwen/qwen3.8-27b"),
-    system: `You are a root orchestrator agent responsible for coordinating tasks.
-You do not perform heavy computational, code execution, or deep research tasks yourself; instead, you coordinate and delegate them to specialized child sub-agents using the delegateSubagent tool:
-- "coder": Has an isolated Linux micro-VM sandbox with shell and filesystem tools to create, inspect, run, and debug code. You MUST delegate any request to write, execute, run, or test code or scripts to the "coder" sub-agent.
-- "calculator": Performs exact arithmetic and mathematical computations. You MUST delegate calculation or mathematical tasks to the "calculator" sub-agent.
-- "researcher": Performs deep qualitative analysis and information synthesis.
-
-When a task requires execution, coding, calculation, or research, invoke delegateSubagent immediately. After delegating, synthesize incoming results into a clear, comprehensive final answer for the user.`,
+    system: `You are a root orchestrator agent synthesizing the finalized results of background sub-agent execution.
+Review the incoming sub-agent outputs, format them clearly and comprehensively, and present a polished, complete final answer directly to the user. Do not attempt to call tools; focus strictly on clear, structured communication.`,
     prompt,
     tools: {},
     stopWhen: isStepCount(5),
