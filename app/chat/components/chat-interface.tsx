@@ -17,6 +17,7 @@ export default function ChatInterface() {
   const [threadsList, setThreadsList] = useState<
     Array<{ id: string; title: string; createdAt: Date }>
   >([]);
+  const [shouldPoll, setShouldPoll] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const newlyCreatedThreadIdRef = useRef<string | null>(null);
@@ -107,6 +108,8 @@ export default function ChatInterface() {
       },
     ]);
 
+    let hasPendingBackgroundJob = false;
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -142,7 +145,6 @@ export default function ChatInterface() {
         const chunk = utf8Decoder.decode(value, { stream: true });
         content += chunk;
         const lines = content.split("\n\n");
-
         const nextContent = lines.pop() ?? "";
 
         let assistantMessageContentDiff = "";
@@ -158,30 +160,51 @@ export default function ChatInterface() {
                 const nextMessages = [...prevMessages];
                 const targetIndex = nextMessages.length - 1;
 
+                const currentMetadata =
+                  nextMessages[targetIndex].metadata ?? {};
+                const currentToolExecutions =
+                  currentMetadata.toolExecutions ?? [];
+
                 nextMessages[targetIndex] = {
                   ...nextMessages[targetIndex],
-                  toolExecutions: [
-                    ...(nextMessages[targetIndex].toolExecutions ?? []),
-                    {
-                      id: json["id"],
-                      toolName: json["toolName"],
-                      input: json["input"],
-                      status: "pending",
-                    },
-                  ],
+                  metadata: {
+                    ...currentMetadata,
+                    toolExecutions: [
+                      ...currentToolExecutions,
+                      {
+                        id: json["id"],
+                        toolName: json["toolName"],
+                        input: json["input"],
+                        status: "pending",
+                      },
+                    ],
+                  },
                 };
 
                 return nextMessages;
               });
             } else if (json["type"] === "tool-result") {
+              if (
+                json["output"]?.["status"] === "pending" &&
+                json["output"]?.["triggerRunId"]
+              ) {
+                hasPendingBackgroundJob = true;
+              }
+
               setMessages((prevMessages) => {
                 const nextMessages = [...prevMessages];
                 const targetIndex = nextMessages.length - 1;
 
+                const currentMetadata =
+                  nextMessages[targetIndex].metadata ?? {};
+                const currentToolExecutions =
+                  currentMetadata.toolExecutions ?? [];
+
                 nextMessages[targetIndex] = {
                   ...nextMessages[targetIndex],
-                  toolExecutions: [
-                    ...(nextMessages[targetIndex].toolExecutions?.map(
+                  metadata: {
+                    ...currentMetadata,
+                    toolExecutions: currentToolExecutions.map(
                       (toolExecution) => {
                         if (toolExecution.id === json["id"]) {
                           const newToolExecution: ToolExecution = {
@@ -195,8 +218,8 @@ export default function ChatInterface() {
                         }
                         return toolExecution;
                       },
-                    ) ?? []),
-                  ],
+                    ),
+                  },
                 };
 
                 return nextMessages;
@@ -229,6 +252,11 @@ export default function ChatInterface() {
     } finally {
       setIsSubmitting(false);
       await loadThreads();
+
+      if (hasPendingBackgroundJob) {
+        setShouldPoll(true);
+        hasPendingBackgroundJob = false;
+      }
     }
   };
 
@@ -270,6 +298,35 @@ export default function ChatInterface() {
       }
     }
   }, [input]);
+
+  useEffect(() => {
+    const threadId = threadIdSearchParam ?? newlyCreatedThreadIdRef.current;
+    if (!shouldPoll || !threadId) return;
+
+    const timerId = setInterval(async () => {
+      try {
+        const freshData = await getThreadMessages(threadId);
+
+        setMessages(freshData);
+
+        const lastMessage = freshData[freshData.length - 1];
+        const toolExecs = lastMessage?.metadata?.toolExecutions;
+        const lastToolExecution = toolExecs
+          ? toolExecs[toolExecs.length - 1]
+          : undefined;
+        const isFinished =
+          lastMessage.role === "assistant" &&
+          (!lastToolExecution ||
+            (lastToolExecution.output as any)?.status !== "pending");
+
+        if (isFinished) setShouldPoll(false);
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(timerId);
+  }, [shouldPoll, threadIdSearchParam]);
 
   return (
     <div className="flex h-[720px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -448,9 +505,9 @@ export default function ChatInterface() {
                     }`}
                   >
                     {/* Tool Invocations Section */}
-                    {(message.toolExecutions?.length ?? 0) > 0 && (
+                    {(message.metadata?.toolExecutions?.length ?? 0) > 0 && (
                       <div className="mb-2.5 space-y-2 border-b border-zinc-200/60 pb-2.5 dark:border-zinc-700/50">
-                        {message.toolExecutions?.map(
+                        {message.metadata?.toolExecutions?.map(
                           (toolExecution, toolIndex) => {
                             const uniqueKey =
                               toolExecution.id ??

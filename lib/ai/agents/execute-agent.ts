@@ -39,6 +39,8 @@ export const executeAgent = async (
   return {
     success: true,
     executionId: agentExecutionId,
+    agentId,
+    threadId,
     triggerRunId: undefined,
     status: "completed",
     output: outputText ?? "Sub-agent executed successfully.",

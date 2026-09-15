@@ -102,7 +102,7 @@ export const createDelegateSubagentTool = (
         };
       }
 
-      return executeAgent(agentId, agentExecutionContext);
+      return await executeAgent(agentId, agentExecutionContext);
     },
   });
 };

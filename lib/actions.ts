@@ -4,7 +4,7 @@ import { agentExecutions, messages, threads } from "./db/schema";
 import { db } from "./db";
 import { AgentRole } from "@/types/AgentRole";
 import { count, eq, asc, desc } from "drizzle-orm";
-import { Message } from "@/types/Message";
+import { Message, MessageMetadata } from "@/types/Message";
 import { testRunTask } from "@/trigger/test-run";
 
 export const getThreadMessages = async (
@@ -26,8 +26,7 @@ export const getThreadMessages = async (
     id: m.id,
     role: m.role as "user" | "assistant",
     content: m.content,
-    metadata: (m.metadata as Record<string, any>) ?? undefined,
-    toolExecutions: (m.metadata as any)?.toolExecutions ?? [],
+    metadata: (m.metadata as MessageMetadata) ?? undefined,
   }));
 };
 
