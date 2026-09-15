@@ -3,7 +3,7 @@ import { agentExecutions, taskHandoffs } from "@/lib/db/schema";
 import { tool } from "ai";
 import { z } from "zod";
 import { agentRegistry } from "../agents/registry";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { AGENT_ROLES } from "@/constants/agent-roles";
 import { AgentExecutionContext } from "@/types/AgentExecutionContext";
 import { runAgentTask } from "@/trigger/run-agent";
@@ -15,12 +15,12 @@ export const createDelegateSubagentTool = (
 ) => {
   return tool({
     description:
-      "Spawn and delegate a sub-task to a specialized child sub-agent. Call this tool when a task requires specialized execution (such as in-depth research or calculations), registering hierarchical lineage under the parent execution.",
+      "Spawn and delegate a sub-task to a specialized child sub-agent. Available agents: 'coder' (runs code, tests scripts, and inspects files in an isolated Linux micro-VM sandbox), 'calculator' (evaluates exact arithmetic and formulas), and 'researcher' (deep qualitative analysis). Call this tool whenever a task requires specialized execution, running code, or exact calculations.",
     inputSchema: z.object({
       agentId: z
         .enum(AGENT_ROLES)
         .describe(
-          "The identifier or role name of the sub-agent to delegate to (e.g., 'researcher')",
+          "The role of the sub-agent to delegate to: 'coder' (code execution/sandboxed work), 'calculator' (math), or 'researcher' (research)",
         ),
       prompt: z
         .string()
@@ -34,6 +34,28 @@ export const createDelegateSubagentTool = (
         ),
     }),
     execute: async ({ agentId, prompt, input }) => {
+      const [concurrentAgentExecution] = await db
+        .select()
+        .from(agentExecutions)
+        .where(
+          and(
+            inArray(agentExecutions.status, ["pending", "executing"]),
+            eq(agentExecutions.parentExecutionId, parentExecutionId),
+          ),
+        )
+        .orderBy(desc(agentExecutions.createdAt))
+        .limit(1);
+
+      if (concurrentAgentExecution != null)
+        return {
+          success: false,
+          executionId: concurrentAgentExecution.id,
+          triggerRunId: concurrentAgentExecution.triggerRunId,
+          status: concurrentAgentExecution.status,
+          output: "Another sub-agent is already running",
+          message: "Another sub-agent is already running",
+        };
+
       const agentDefinition = agentRegistry[agentId];
 
       const [agentExecution] = await db

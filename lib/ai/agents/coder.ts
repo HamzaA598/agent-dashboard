@@ -1,8 +1,8 @@
 import { generateText, isStepCount } from "ai";
-import { google } from "../llms/google";
 import { createHandoffTaskTool } from "../tools/handoff-task";
 import { AgentExecutionContext } from "@/types/AgentExecutionContext";
 import { formatTaskPrompt } from "../prompts/format-task-prompt";
+import { groq } from "@ai-sdk/groq";
 
 export const runCoderAgent = async ({
   agentExecutionId,
@@ -18,7 +18,7 @@ export const runCoderAgent = async ({
   });
 
   return generateText({
-    model: google("gemini-3.6-flash"),
+    model: groq("qwen/qwen3.8-27b"),
     system: `You are an expert autonomous software engineering sub-agent operating inside an isolated Linux micro-VM sandbox.
             Your objective is to investigate codebases, execute terminal commands, run test suites, diagnose defects, and apply surgical
             code modifications.
