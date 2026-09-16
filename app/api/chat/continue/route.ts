@@ -12,7 +12,26 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { success, agentId, threadId, executionId, status, output } = body;
 
-  const prompt = `${agentId} agent has finished running its background job with success ${success}, status {${status}}, and output {${output}}`;
+  const formattedOutput =
+    typeof output === "string" ? output : JSON.stringify(output, null, 2);
+
+  const prompt = `## Sub-Agent Execution Completion Report
+
+### Execution Metadata
+- **Sub-Agent Role:** ${agentId}
+- **Execution ID:** ${executionId}
+- **Execution Status:** ${status}
+- **Task Success:** ${success ? "COMPLETED" : "FAILED / INCOMPLETE"}
+
+### Sub-Agent Deliverables & Raw Output
+\`\`\`
+${formattedOutput}
+\`\`\`
+
+### Orchestrator Synthesis Directives
+1. **Direct Communication:** Present the final answer directly to the user as the primary orchestrator. Do NOT use third-person meta-narratives (e.g., avoid "The coder agent reported that...").
+2. **Deliverables & Formatting:** Highlight key outcomes, mathematical results, or file modifications. Format all code, diffs, and terminal outputs in clean, syntax-highlighted Markdown code blocks.
+3. **Failure Diagnostics:** If the task failed or completed partially, explain the specific failure mode clearly and outline actionable next steps for the user.`;
 
   const [agentExecution] = await db
     .insert(agentExecutions)
