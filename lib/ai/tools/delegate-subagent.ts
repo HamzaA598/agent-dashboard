@@ -15,7 +15,7 @@ export const createDelegateSubagentTool = (
 ) => {
   return tool({
     description:
-      "Spawn and delegate a sub-task to a specialized child sub-agent. Available agents: 'coder' (runs code, tests scripts, and inspects files in an isolated Linux micro-VM sandbox), 'calculator' (evaluates exact arithmetic and formulas), and 'researcher' (deep qualitative analysis). Call this tool whenever a task requires specialized execution, running code, or exact calculations.",
+      "Spawn and delegate a sub-task to a specialized child sub-agent. Available agents: 'coder' (runs code, tests scripts, and inspects files in an isolated Linux micro-VM sandbox), 'calculator' (evaluates exact arithmetic and formulas), and 'researcher' (deep qualitative analysis). Call this tool ONLY when a task requires one of these specific specialized capabilities. Do NOT call this tool for greetings, pleasantries, general conversation, simple questions, or tasks that do not require specialized sub-agent execution.",
     inputSchema: z.object({
       agentId: z
         .enum(AGENT_ROLES)
