@@ -1,4 +1,6 @@
 import { AGENT_ROLES } from "@/constants/agent-roles";
+import { ROLES } from "@/constants/roles";
+import { MessageMetadata } from "@/types/Message";
 import {
   pgTable,
   uuid,
@@ -10,6 +12,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 
+export const roleEnum = pgEnum("role", ROLES);
 export const agentRoleEnum = pgEnum("agent_role", AGENT_ROLES);
 export const threadStatusEnum = pgEnum("thread_status", [
   "active",
@@ -79,9 +82,9 @@ export const messages = pgTable("messages", {
     .notNull()
     .references(() => threads.id, { onDelete: "cascade" }),
 
-  role: varchar("role", { length: 256 }).notNull(),
+  role: roleEnum("role").notNull(),
 
-  metadata: jsonb("metadata"),
+  metadata: jsonb("metadata").$type<MessageMetadata>(),
 
   content: text("content").notNull(),
 

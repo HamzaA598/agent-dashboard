@@ -2,7 +2,7 @@ import { generateText, isStepCount } from "ai";
 import { sampleTool } from "@/lib/ai/tools/sample-tool";
 import { calculator } from "../tools/calculator";
 import { createHandoffTaskTool } from "../tools/handoff-task";
-import { AgentExecutionContext } from "@/types/AgentExecutionContext";
+import { WorkerExecutionContext } from "@/types/AgentExecutionContext";
 import { formatTaskPrompt } from "../prompts/format-task-prompt";
 import { groq } from "@ai-sdk/groq";
 
@@ -11,7 +11,7 @@ export const runResearcherAgent = ({
   prompt,
   input,
   handoff,
-}: AgentExecutionContext) => {
+}: WorkerExecutionContext) => {
   const formattedPrompt = formatTaskPrompt({
     prompt,
     handoff,

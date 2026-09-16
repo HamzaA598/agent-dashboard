@@ -5,7 +5,7 @@ import { runResearcherAgent } from "./researcher";
 import { runCoderAgent } from "./coder";
 import { runCalculatorAgent } from "./calculator";
 
-export const agentRegistry: Record<AgentRole, AgentDefinition<any>> = {
+export const agentRegistry: Record<AgentRole, AgentDefinition<any, any>> = {
   orchestrator: {
     name: "Orchestrator Agent",
     description:

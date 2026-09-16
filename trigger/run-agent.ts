@@ -1,11 +1,11 @@
-import { AgentExecutionContext } from "@/types/AgentExecutionContext";
+import { WorkerExecutionContext } from "@/types/AgentExecutionContext";
 import { AgentRole } from "@/types/AgentRole";
 import { executeAgent } from "@/lib/ai/agents/execute-agent";
 import { task } from "@trigger.dev/sdk";
 
 interface RunAgentTaskProps {
   agentId: AgentRole;
-  agentExecutionContext: AgentExecutionContext;
+  agentExecutionContext: WorkerExecutionContext;
 }
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

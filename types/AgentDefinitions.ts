@@ -1,9 +1,9 @@
-import { AgentExecutionContext } from "./AgentExecutionContext";
+import { WorkerExecutionContext } from "./AgentExecutionContext";
 
-export interface AgentDefinition<TOutput> {
+export interface AgentDefinition<TOutput = any, TCtx = WorkerExecutionContext> {
   name: string;
   description: string;
-  run: (ctx: AgentExecutionContext) => TOutput | Promise<TOutput>;
+  run: (ctx: TCtx) => TOutput | Promise<TOutput>;
   isLongRunning?: boolean;
   requiresSandbox?: boolean;
 }

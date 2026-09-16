@@ -1,8 +1,9 @@
-import { runAgent } from "@/lib/ai/agents/agent";
 import { runOrchestratorAgent } from "@/lib/ai/agents/orchestrator";
 import { db } from "@/lib/db";
 import { agentExecutions, messages, threads } from "@/lib/db/schema";
+import { Message } from "@/types/Message";
 import { ToolExecution } from "@/types/ToolExecution";
+import { ModelMessage } from "ai";
 import { and, eq } from "drizzle-orm";
 
 export const POST = async (req: Request) => {
@@ -29,14 +30,26 @@ export const POST = async (req: Request) => {
     });
   }
 
-  const [userMessage] = await db
-    .insert(messages)
-    .values({
-      threadId: threadId,
-      role: "user",
-      content: prompt,
-    })
-    .returning();
+  const threadMessages: Message[] = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.threadId, threadId))
+    .orderBy(messages.createdAt);
+
+  await db.insert(messages).values({
+    threadId: threadId,
+    role: "user",
+    content: String(prompt),
+  });
+
+  const messageHistory: ModelMessage[] = (threadMessages ?? []).map(
+    (message) => ({
+      role: message.role,
+      content: message.content,
+    }),
+  );
+
+  messageHistory.push({ role: "user", content: String(prompt) });
 
   const [agentExecution] = await db
     .insert(agentExecutions)
@@ -49,7 +62,7 @@ export const POST = async (req: Request) => {
   const result = await runOrchestratorAgent({
     threadId,
     agentExecutionId: agentExecution.id,
-    prompt,
+    messages: messageHistory,
   });
 
   const encoder = new TextEncoder();

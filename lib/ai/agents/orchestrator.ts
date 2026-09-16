@@ -1,13 +1,13 @@
 import { generateText, isStepCount, streamText } from "ai";
 import { createDelegateSubagentTool } from "../tools/delegate-subagent";
-import { AgentExecutionContext } from "@/types/AgentExecutionContext";
+import { OrchestratorExecutionContext } from "@/types/AgentExecutionContext";
 import { groq } from "@ai-sdk/groq";
 
 export const runOrchestratorAgent = async ({
   threadId,
   agentExecutionId,
-  prompt,
-}: AgentExecutionContext) => {
+  messages,
+}: OrchestratorExecutionContext) => {
   return streamText({
     model: groq("qwen/qwen3.8-27b"),
     system: `You are the primary root orchestrator and conversational intelligence of this system.
@@ -30,7 +30,7 @@ CRITICAL DELEGATION INVARIANTS:
 1. Strictly Sequential Delegation (No Parallel Tool Calls): You MUST NOT call delegateSubagent multiple times in parallel. Invoke delegateSubagent at most ONCE per turn.
 2. Single Consolidated Prompt: Package all necessary instructions into a single, comprehensive prompt for the chosen sub-agent rather than splitting work across concurrent delegations.
 3. Post-Delegation Synthesis: When you do delegate to a sub-agent, synthesize the incoming output into a clear, helpful final answer for the user.`,
-    prompt,
+    messages,
     tools: {
       delegateSubagent: createDelegateSubagentTool(threadId, agentExecutionId),
     },

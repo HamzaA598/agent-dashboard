@@ -1,3 +1,4 @@
+import { Role } from "./Role";
 import { ToolExecution } from "./ToolExecution";
 
 export interface MessageMetadata {
@@ -7,7 +8,7 @@ export interface MessageMetadata {
 
 export interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: Role;
   content: string;
-  metadata?: MessageMetadata;
+  metadata?: MessageMetadata | null;
 }

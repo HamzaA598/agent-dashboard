@@ -5,7 +5,7 @@ import { z } from "zod";
 import { agentRegistry } from "../agents/registry";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { AGENT_ROLES } from "@/constants/agent-roles";
-import { AgentExecutionContext } from "@/types/AgentExecutionContext";
+import { WorkerExecutionContext } from "@/types/AgentExecutionContext";
 import { runAgentTask } from "@/trigger/run-agent";
 import { executeAgent } from "@/lib/ai/agents/execute-agent";
 
@@ -104,7 +104,7 @@ export const createDelegateSubagentTool = (
           .where(eq(taskHandoffs.id, latestPendingHandoff.id));
       }
 
-      const agentExecutionContext: AgentExecutionContext = {
+      const agentExecutionContext: WorkerExecutionContext = {
         threadId,
         agentExecutionId: agentExecution.id,
         prompt,

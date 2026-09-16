@@ -6,11 +6,11 @@ import { db } from "@/lib/db";
 import { agentExecutions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { AgentRole } from "@/types/AgentRole";
-import { AgentExecutionContext } from "@/types/AgentExecutionContext";
+import { WorkerExecutionContext } from "@/types/AgentExecutionContext";
 
 export const executeAgent = async (
   agentId: AgentRole,
-  agentExecutionContext: AgentExecutionContext,
+  agentExecutionContext: WorkerExecutionContext,
 ) => {
   const { agentExecutionId, threadId } = agentExecutionContext;
   const agentDefinition = agentRegistry[agentId];
@@ -21,7 +21,10 @@ export const executeAgent = async (
     tools = createSandboxTools(sandbox);
   }
 
-  const updatedAgentExecutionContext = { ...agentExecutionContext, tools };
+  const updatedAgentExecutionContext: WorkerExecutionContext = {
+    ...agentExecutionContext,
+    tools,
+  };
 
   const result = await agentDefinition.run(updatedAgentExecutionContext);
 
